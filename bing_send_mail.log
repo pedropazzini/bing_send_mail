@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/pedro/doc/python/bing_send_mail/bing_send_mail.py", line 114, in <module>
+    main()
+  File "/home/pedro/doc/python/bing_send_mail/bing_send_mail.py", line 111, in main
+    send_mails(directory + '/' + image_name, image_description)
+  File "/home/pedro/doc/python/bing_send_mail/bing_send_mail.py", line 96, in send_mails
+    with open(f, "rb") as fil:
+IOError: [Errno 2] No such file or directory: 'figures/TidalArt_PT-BR8635017737_1366x768.jpg'
