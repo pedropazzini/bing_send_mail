@@ -1,10 +1,18 @@
 # bing_send_mail
-Python script that downloads and sends the bing image of the day thru e-mail
+Python script that downloads and sends the bing image of the day thru e-mail with a specific message for each of multiple receivers.
 
 # Configuration
- Mail configurations such as username, password should be done mail.cfg file. Other configurations such as the root installation shoud be done at the file bing_send_mail.py
+Mail configurations such as username, password should be done mail.cfg file. The receivers configuration should be done in the receivers folder, and each file on it saves the configurations for one receiver.
+
+The easiest way to use it is via Docker. So just build the Dockerfile:
+
+docker build -t bing_send_mail .
+
+And then run:
+
+/usr/bin/docker run -v /home/pedro/doc/python/bing_send_mail/:/tmp/ bing_send_mail
 
 #Cron jobs
-It's easy to make it a cron job, by adding the following to your crontab (after editing for your specific folder):
+It's easy to make a cron job for it by adding the following to your crontab (after editing for your specific installation folder):
 
-00 6 * * * /home/pedro/doc/python/bing_send_mail/bin/python2.7 /home/pedro/doc/python/bing_send_mail/bing_send_mail.py >> /home/pedro/doc/python/bing_send_mail/bing_send_mail.log 2>&1
+00 6 * * * /usr/bin/docker run -v /home/pedro/doc/python/bing_send_mail/:/tmp/ bing_send_mail

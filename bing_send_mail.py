@@ -5,6 +5,7 @@ import os
 import smtplib
 
 from os.path import basename,abspath
+from os import listdir
 from ConfigParser import ConfigParser
 import json
 
@@ -16,10 +17,10 @@ from email.utils import COMMASPACE, formatdate
 '''
 Section with global variables that define general configurations of the script.
 '''
-root_folder = '/home/pedro/doc/python/bing_send_mail/' # Root folder, where all the files are
+root_folder = '/tmp/' # Root folder, where all the files are
 bing_link = 'http://www.bing.com/' # Link of the figure
 directory = 'figures' # Directory where all the figures are saved
-config_file='mail.cfg' # Config file where is expected some configurations, like username and password of the mail server
+config_file='mail.cfg' # Config file where are expected some configurations, like username and password of the mail server
 section='configs' #Section of the config file
 receivers_folder='receivers' # folder where all the json files of the receivers can be found
 #receivers_folder='receivers_example'
