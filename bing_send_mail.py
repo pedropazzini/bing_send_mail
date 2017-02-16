@@ -6,13 +6,17 @@ import smtplib
 
 from os.path import basename,abspath
 from os import listdir
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import json
 
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
+
+from script import bing
+from scrapy.crawler import CrawlerProcess
+from datetime import datetime
 
 '''
 Section with global variables that define general configurations of the script.
@@ -53,6 +57,17 @@ def get_image_and_description():
     image_description = re.findall("alt=\"(.*?)\"", body)[0]
 
     full_image_link = bing_link + link_image
+
+    image_name = download_image(full_image_link)
+
+
+    return image_description,image_name
+
+def download_image(full_image_link):
+
+    '''
+    Downloads and soters the image from the link of the bing image.
+    '''
     image_name = full_image_link.split('/')[-1]
 
     # stores the image in the specified folder
@@ -62,7 +77,7 @@ def get_image_and_description():
 
     urllib.urlretrieve(full_image_link,direc + '/' + image_name)
 
-    return image_description,image_name
+    return image_name
 
 def send_mails(filename,image_description):
     '''
@@ -93,7 +108,8 @@ def send_mails(filename,image_description):
 
         toAddr = config['email']
         message = config['message']
-        message = message.replace('*',unicode(image_description,'utf-8'))
+        #message = message.replace('*',unicode(image_description,'utf-8'))
+        message = message.replace('*',image_description)
 
         msg = MIMEMultipart(
                 From=fromAddr,
@@ -117,10 +133,43 @@ def send_mails(filename,image_description):
 
     server.quit()
 
+def call_crawller():
+
+    '''
+    Calls the scraper of the bing website, and soters the result in a json file with the name of the weekday that the script has be runned.
+    '''
+
+    fname =  datetime.now().strftime("%w") + '.json'
+    if os.path.isfile(fname):
+        os.remove(fname)
+    process = CrawlerProcess({
+            'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
+            'FEED_FORMAT': 'json',
+            'FEED_URI': fname
+            })
+
+    process.crawl(bing)
+    process.start()
+
+def get_img_and_description():
+    '''
+    Crawls dnd ownloads the image of the day
+    '''
+    call_crawller()
+    with open(datetime.now().strftime("%w") + ".json",'r') as f:
+        data = json.load(f)[0]
+
+    img_name = download_image(data['img_link'])
+
+    description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
+
+    return description,img_name
+
 def main():
 
     #Download and send all the mails
-    image_description,image_name = get_image_and_description()
+    #image_description,image_name = get_image_and_description()
+    image_description,image_name = get_img_and_description()
     send_mails(directory + '/' + image_name, image_description)
 
 if __name__ == "__main__":
