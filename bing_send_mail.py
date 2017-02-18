@@ -155,13 +155,25 @@ def get_img_and_description():
     '''
     Crawls dnd ownloads the image of the day
     '''
-    call_crawller()
-    with open(datetime.now().strftime("%w") + ".json",'r') as f:
-        data = json.load(f)[0]
+    n_counts = 0
+    max_counts = 10
 
-    img_name = download_image(data['img_link'])
+    while n_counts < max_counts:
 
-    description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
+        n_counts += 1
+
+        print('Temptative ' + str(n_counts) + '/' + str(max_counts))
+
+        call_crawller()
+        with open(datetime.now().strftime("%w") + ".json",'r') as f:
+            data = json.load(f)[0]
+
+        img_name = download_image(data['img_link'])
+
+        description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
+
+        if img_name != 'NONE' and description != 'NONE':
+            n_counts = max_counts
 
     return description,img_name
 
