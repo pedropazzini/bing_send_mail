@@ -77,6 +77,8 @@ def download_image(full_image_link):
 
     urllib.urlretrieve(full_image_link,direc + '/' + image_name)
 
+    print('New image founded: [' + image_name + ']')
+
     return image_name
 
 def send_mails(filename,image_description):
@@ -172,7 +174,11 @@ def get_img_and_description():
 
         description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
 
-        if img_name != 'NONE' and description != 'NONE':
+        print('Description:[' + description.encode('utf-8') + ']')
+        print('Image name:[' + img_name.encode('utf-8') + ']')
+
+        if not (img_name == 'NONE' or description == 'NONE'):
+            print('ALL OK....')
             n_counts = max_counts
 
     return description,img_name
