@@ -18,6 +18,10 @@ from script import bing
 from scrapy.crawler import CrawlerProcess
 from datetime import datetime
 
+import logging
+
+import numpy as np
+
 '''
 Section with global variables that define general configurations of the script.
 '''
@@ -25,8 +29,10 @@ root_folder = '/tmp/' # Root folder, where all the files are
 bing_link = 'http://www.bing.com/' # Link of the figure
 directory = 'figures' # Directory where all the figures are saved
 config_file='mail.cfg' # Config file where are expected some configurations, like username and password of the mail server
+artigos_file='artigos.json'
 section='configs' #Section of the config file
 receivers_folder='receivers' # folder where all the json files of the receivers can be found
+log_file='bing.log'
 #receivers_folder='receivers_example'
 #config_file='mail_example.cfg'
 
@@ -77,7 +83,7 @@ def download_image(full_image_link):
 
     urllib.urlretrieve(full_image_link,direc + '/' + image_name)
 
-    print('New image founded: [' + image_name + ']')
+    LOG_INFO('New image founded: [' + image_name + ']')
 
     return image_name
 
@@ -106,12 +112,21 @@ def send_mails(filename,image_description):
     # Iterates trough all the receiver contained in the receivers folder (in the json format)
     for json_file in os.listdir(get_file_location(receivers_folder)):
         with open(get_file_location(receivers_folder) + '/' + json_file,'r') as f:
+            LOG_INFO('Decoding...')
+            LOG_INFO(f)
             config = json.load(f)
 
         toAddr = config['email']
+        #if 'plrocha' not in toAddr:
+        #    continue
+
+        LOG_INFO(toAddr)
+
         message = config['message']
         #message = message.replace('*',unicode(image_description,'utf-8'))
         message = message.replace('*',image_description)
+        if '\n#\n' in message:
+            message = message.replace('\n#\n','\n' + get_artigo() + '\n')
 
         msg = MIMEMultipart(
                 From=fromAddr,
@@ -135,23 +150,22 @@ def send_mails(filename,image_description):
 
     server.quit()
 
-def call_crawller():
+def get_logger_object(level=logging.INFO):
+    logger = logging.getLogger('BingApp')
+    hdlr = logging.handlers.RotatingFileHandler(root_folder+log_file, maxBytes=2000000,backupCount=5)
+    #hdlr = logging.FileHandler(root_folder+log_file)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr) 
+    logger.setLevel(level)
+    return logger
 
+def LOG_INFO(string):
     '''
-    Calls the scraper of the bing website, and soters the result in a json file with the name of the weekday that the script has be runned.
+    Log info in string to log file
     '''
 
-    fname =  datetime.now().strftime("%w") + '.json'
-    if os.path.isfile(fname):
-        os.remove(fname)
-    process = CrawlerProcess({
-            'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
-            'FEED_FORMAT': 'json',
-            'FEED_URI': fname
-            })
-
-    process.crawl(bing)
-    process.start()
+    logger_obj.info(string)
 
 def get_img_and_description():
     '''
@@ -164,7 +178,7 @@ def get_img_and_description():
 
         n_counts += 1
 
-        print('Temptative ' + str(n_counts) + '/' + str(max_counts))
+        LOG_INFO('Temptative ' + str(n_counts) + '/' + str(max_counts))
 
         call_crawller()
         with open(datetime.now().strftime("%w") + ".json",'r') as f:
@@ -174,14 +188,51 @@ def get_img_and_description():
 
         description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
 
-        print('Description:[' + description.encode('utf-8') + ']')
-        print('Image name:[' + img_name.encode('utf-8') + ']')
+        LOG_INFO('Description:[' + description.encode('utf-8') + ']')
+        LOG_INFO('Image name:[' + img_name.encode('utf-8') + ']')
 
-        if not (img_name == 'NONE' or description == 'NONE'):
-            print('ALL OK....')
+        if not ( 'NONE' in img_name or 'NONE' in description):
+            LOG_INFO('ALL OK....')
             n_counts = max_counts
 
     return description,img_name
+
+def get_artigo():
+    if not os.path.isfile(get_file_location(artigos_file)):
+        LOG_INFO('Not found: ' + artigos_file)
+        return ''
+    with open(get_file_location(artigos_file)) as f:
+        data = json.load(f)
+
+    string=''
+    while data is not None:
+        size = len(data)
+        pos = np.random.randint(size)
+        key = list(data.keys())[pos]
+        string += key + ' - '
+        data = data[key]
+        if 'Art.' in data:
+            string += '\n' + data
+            data = None
+
+    return string
+
+def call_crawller():
+    '''
+    Calls the scraper of the bing website, and soters the result in a json file with the name of the weekday that the script has be runned.
+    '''
+    fname =  datetime.now().strftime("%w") + '.json'
+    if os.path.isfile(fname):
+        os.remove(fname)
+    process = CrawlerProcess({
+            'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
+            'FEED_FORMAT': 'json',
+            'FEED_URI': fname
+            })
+
+    process.crawl(bing)
+    process.start()
+
 
 def main():
 
@@ -191,4 +242,5 @@ def main():
     send_mails(directory + '/' + image_name, image_description)
 
 if __name__ == "__main__":
+    logger_obj = get_logger_object()
     main()

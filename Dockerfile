@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 
 MAINTAINER Pedro Pazzini <pedro.pazzini@gmail.com>
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED 0
 
 COPY bing_send_mail.py /src/bing_send_mail.py
 COPY script.py /src/script.py

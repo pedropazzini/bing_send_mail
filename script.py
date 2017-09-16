@@ -19,7 +19,7 @@ class bing(scrapy.Spider):
     def parse_info(self,response):
 
         try:
-            self.title = response.xpath('//h2[@class=""]/text()')[1].extract()
+            self.title = response.xpath('//h2[@class=""]/text()')[0].extract()
         except:
             self.title = 'NONE'
 
