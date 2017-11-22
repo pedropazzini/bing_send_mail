@@ -160,6 +160,14 @@ def get_logger_object(level=logging.INFO):
     logger.setLevel(level)
     return logger
 
+def LOG_ERROR(ex):
+    '''
+    Log info in string to log file
+    '''
+
+    logger_obj.error(ex, exc_info=True)
+
+
 def LOG_INFO(string):
     '''
     Log info in string to log file
@@ -176,24 +184,28 @@ def get_img_and_description():
 
     while n_counts < max_counts:
 
-        n_counts += 1
+        try:
+            n_counts += 1
+            LOG_INFO('Temptative ' + str(n_counts) + '/' + str(max_counts))
+            call_crawller()
+            LOG_INFO('Crawled...')
 
-        LOG_INFO('Temptative ' + str(n_counts) + '/' + str(max_counts))
+            with open(datetime.now().strftime("%w") + ".json",'r') as f:
+                data = json.load(f)[0]
 
-        call_crawller()
-        with open(datetime.now().strftime("%w") + ".json",'r') as f:
-            data = json.load(f)[0]
+            img_name = download_image(data['img_link'])
+            description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
 
-        img_name = download_image(data['img_link'])
+            LOG_INFO('Description:[' + description.encode('utf-8') + ']')
+            LOG_INFO('Image name:[' + img_name.encode('utf-8') + ']')
 
-        description = "\n\"" + data['title'] + '\"\n\n' + data['description'].replace('<div>','').replace('</div>','') + "\n"
+            if not ( 'NONE' in img_name or 'NONE' in description):
+                LOG_INFO('ALL OK....')
+                n_counts = max_counts
+        
+        except Exception as e:
 
-        LOG_INFO('Description:[' + description.encode('utf-8') + ']')
-        LOG_INFO('Image name:[' + img_name.encode('utf-8') + ']')
-
-        if not ( 'NONE' in img_name or 'NONE' in description):
-            LOG_INFO('ALL OK....')
-            n_counts = max_counts
+            LOG_ERROR(e)
 
     return description,img_name
 
@@ -221,21 +233,27 @@ def call_crawller():
     '''
     Calls the scraper of the bing website, and soters the result in a json file with the name of the weekday that the script has be runned.
     '''
-    fname =  datetime.now().strftime("%w") + '.json'
-    if os.path.isfile(fname):
-        os.remove(fname)
-    process = CrawlerProcess({
-            'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
-            'FEED_FORMAT': 'json',
-            'FEED_URI': fname
-            })
+    try:
+        fname =  datetime.now().strftime("%w") + '.json'
+        if os.path.isfile(fname):
+            os.remove(fname)
+        process = CrawlerProcess({
+                'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
+                'FEED_FORMAT': 'json',
+                'FEED_URI': fname
+                })
 
-    process.crawl(bing)
-    process.start()
+        process.crawl(bing)
+        process.start()
+    except Exception as e:
+
+        LOG_ERROR(e)
+
 
 
 def main():
 
+    LOG_INFO('Started!')
     #Download and send all the mails
     #image_description,image_name = get_image_and_description()
     image_description,image_name = get_img_and_description()
